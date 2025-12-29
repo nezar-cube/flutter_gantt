@@ -306,7 +306,6 @@ class _GanttState extends State<Gantt> {
                                 details,
                                 constraints.maxWidth,
                                 context,
-                                context,
                               ),
                           onPanEnd: _handlePanEnd,
                           onPanCancel: _handlePanCancel,
