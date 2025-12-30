@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../flutter_gantt.dart';
 import 'activities_grid.dart';
 import 'activities_list.dart';
-import 'calendar_grid.dart';
+import 'calendar_grid/calendar_grid.dart';
 import 'controller_extension.dart';
 
 /// A function that converts a [DateTime] representing a month
@@ -98,6 +98,14 @@ class Gantt extends StatefulWidget {
   /// If `null`, a fallback or built-in formatter may be used instead.
   final MonthToText? monthToText;
 
+  /// The display mode for the Gantt chart.
+  ///
+  /// Determines the granularity of the timeline view:
+  /// - [GanttDisplayMode.day]: Shows individual days (default)
+  /// - [GanttDisplayMode.week]: Shows weeks
+  /// - [GanttDisplayMode.month]: Shows months
+  final GanttDisplayMode displayMode;
+
   /// Creates a [Gantt] chart widget.
   ///
   /// Throws an [AssertionError] if:
@@ -122,6 +130,7 @@ class Gantt extends StatefulWidget {
     this.gridAreaFlex = 4,
     this.showIsoWeek = false,
     this.monthToText,
+    this.displayMode = GanttDisplayMode.day,
   }) : assert(
          (startDate != null || controller != null) &&
              ((activities == null) != (activitiesAsync == null)) &&
@@ -315,6 +324,7 @@ class _GanttState extends State<Gantt> {
                                 holidays: c.holidays,
                                 showIsoWeek: widget.showIsoWeek,
                                 monthToText: widget.monthToText,
+                                displayMode: widget.displayMode,
                               ),
                               ActivitiesGrid(
                                 activities: c.activities,

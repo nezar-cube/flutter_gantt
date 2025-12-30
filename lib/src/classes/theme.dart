@@ -109,4 +109,31 @@ class GanttTheme {
 
   /// The border radius for activity cells, calculated as 1/3 of [cellHeight].
   double get cellRounded => cellHeight / 3;
+
+  // add copyWith method
+  GanttTheme copyWith({
+    Color? backgroundColor,
+    Color? holidayColor,
+    Color? weekendColor,
+    Color? todayBackgroundColor,
+    Color? todayTextColor,
+    Color? defaultCellColor,
+    double? cellHeight,
+    double? rowPadding,
+    double? rowsGroupPadding,
+    double? headerHeight,
+    double? dayMinWidth,
+  }) => GanttTheme(
+    backgroundColor: backgroundColor ?? this.backgroundColor,
+    holidayColor: holidayColor ?? this.holidayColor,
+    weekendColor: weekendColor ?? this.weekendColor,
+    todayBackgroundColor: todayBackgroundColor ?? this.todayBackgroundColor,
+    todayTextColor: todayTextColor ?? this.todayTextColor,
+    defaultCellColor: defaultCellColor ?? this.defaultCellColor,
+    cellHeight: cellHeight ?? this.cellHeight,
+    rowPadding: rowPadding ?? this.rowPadding,
+    rowsGroupPadding: rowsGroupPadding ?? this.rowsGroupPadding,
+    headerHeight: headerHeight ?? this.headerHeight,
+    dayMinWidth: dayMinWidth ?? this.dayMinWidth,
+  );
 }

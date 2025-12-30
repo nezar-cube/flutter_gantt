@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
 import '../../flutter_gantt.dart';
+import '../classes/display_mode.dart';
 import '../utils/datetime.dart';
 
 /// Callback type for activity dates changes.
@@ -23,6 +24,7 @@ class GanttController extends ChangeNotifier {
   bool _enableDraggable = true;
   bool _allowParentIndependentDateMovement = false;
   Duration _dragStartDelay;
+  GanttDisplayMode _displayMode = GanttDisplayMode.day;
 
   late GanttTheme _theme;
 
@@ -126,6 +128,17 @@ class GanttController extends ChangeNotifier {
     }
   }
 
+  /// The display mode for the Gantt chart.
+  GanttDisplayMode get displayMode => _displayMode;
+
+  /// Sets the display mode and notifies listeners if changed.
+  set displayMode(GanttDisplayMode value) {
+    if (value != _displayMode) {
+      _displayMode = value;
+      notifyListeners();
+    }
+  }
+
   /// The number of days currently visible in the chart, if null will be calculated automatically
   int? get daysViews => _daysViews;
 
@@ -137,22 +150,34 @@ class GanttController extends ChangeNotifier {
     }
   }
 
-  /// Moves the view forward by [days] and optionally fetches new data.
+  /// Moves the view forward by [periods] and optionally fetches new data.
   ///
-  /// [days] - Number of days to move forward (default: 1)
+  /// [periods] - Number of periods to move forward (default: 1)
   /// [fetchData] - Whether to trigger data fetch (default: true)
-  void next({int days = 1, bool fetchData = true}) =>
-      _addStartDate(days: -days, fetchData: fetchData);
+  void next({int periods = 1, bool fetchData = true}) =>
+      _addStartDate(periods: -periods, fetchData: fetchData);
 
-  /// Moves the view backward by [days] and optionally fetches new data.
+  /// Moves the view backward by [periods] and optionally fetches new data.
   ///
-  /// [days] - Number of days to move backward (default: 1)
+  /// [periods] - Number of periods to move backward (default: 1)
   /// [fetchData] - Whether to trigger data fetch (default: true)
-  void prev({int days = 1, bool fetchData = true}) =>
-      _addStartDate(days: days, fetchData: fetchData);
+  void prev({int periods = 1, bool fetchData = true}) =>
+      _addStartDate(periods: periods, fetchData: fetchData);
 
-  void _addStartDate({int days = 1, bool fetchData = true}) {
-    startDate = startDate.subtract(Duration(days: days));
+  void _addStartDate({int periods = 1, bool fetchData = true}) {
+    switch (_displayMode) {
+      case GanttDisplayMode.day:
+        startDate = startDate.subtract(Duration(days: periods));
+        break;
+      case GanttDisplayMode.week:
+        startDate = startDate.subtract(Duration(days: periods * 7));
+        break;
+      case GanttDisplayMode.month:
+        // Move by months
+        final newDate = DateTime(startDate.year, startDate.month - periods, 1);
+        startDate = newDate;
+        break;
+    }
     if (fetchData) {
       fetch();
     }
@@ -200,11 +225,13 @@ class GanttController extends ChangeNotifier {
     int? daysViews,
     Duration dragStartDelay = kLongPressTimeout,
     GanttTheme? theme,
+    GanttDisplayMode displayMode = GanttDisplayMode.day,
   }) : _startDate =
            (startDate?.toDate ??
                DateTime.now().toDate.subtract(Duration(days: 30))),
        _daysViews = daysViews,
        _dragStartDelay = dragStartDelay,
+       _displayMode = displayMode,
        _theme = theme ?? GanttTheme();
 
   /// Adds a listener for activity dates changes.
