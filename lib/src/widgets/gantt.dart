@@ -220,8 +220,17 @@ class _GanttState extends State<Gantt> {
     BuildContext context,
   ) {
     final dayWidth = maxWidth / controller.internalDaysViews;
+
+    // Increase threshold for month mode to slow down scrolling
+    final thresholdFactor = switch (widget.displayMode) {
+      GanttDisplayMode.month => 3.0,
+      GanttDisplayMode.week => 1.0,
+      GanttDisplayMode.day => 1.0,
+    };
+    final threshold = dayWidth * thresholdFactor;
+    
     final dx = (details.localPosition.dx - _lastPosition!.dx);
-    if (_lastPosition != null && dx.abs() > dayWidth) {
+    if (_lastPosition != null && dx.abs() > threshold) {
       // Check text direction to handle RTL correctly
       // Try Directionality first, fallback to locale check
       final textDirection = Directionality.of(context);
@@ -348,78 +357,81 @@ class _GanttState extends State<Gantt> {
                   }
 
                   return LayoutBuilder(
-                    builder: (context, stackConstraints) => Stack(
-                        children: [
-                          Row(
-                            textDirection: textDirection,
-                            children: [
-                              if (widget.enableCollapsibleActivitiesList &&
-                                  _isActivitiesListCollapsed)
-                                const SizedBox.shrink()
-                              else
+                    builder:
+                        (context, stackConstraints) => Stack(
+                          children: [
+                            Row(
+                              textDirection: textDirection,
+                              children: [
+                                if (widget.enableCollapsibleActivitiesList &&
+                                    _isActivitiesListCollapsed)
+                                  const SizedBox.shrink()
+                                else
+                                  Expanded(
+                                    flex: widget.activitiesListFlex,
+                                    child: ActivitiesList(
+                                      activities: c.activities,
+                                      controller: _listController,
+                                      showIsoWeek: widget.showIsoWeek,
+                                    ),
+                                  ),
                                 Expanded(
-                                  flex: widget.activitiesListFlex,
-                                  child: ActivitiesList(
-                                    activities: c.activities,
-                                    controller: _listController,
-                                    showIsoWeek: widget.showIsoWeek,
+                                  flex: widget.gridAreaFlex,
+                                  child: LayoutBuilder(
+                                    builder: (context, gridConstraints) {
+                                      controller.gridWidth =
+                                          gridConstraints.maxWidth;
+                                      return GestureDetector(
+                                        onPanStart: _handlePanStart,
+                                        onPanUpdate:
+                                            (details) => _handlePanUpdate(
+                                              details,
+                                              gridConstraints.maxWidth,
+                                              context,
+                                            ),
+                                        onPanEnd: _handlePanEnd,
+                                        onPanCancel: _handlePanCancel,
+                                        child: Stack(
+                                          children: [
+                                            CalendarGrid(
+                                              holidays: c.holidays,
+                                              showIsoWeek: widget.showIsoWeek,
+                                              monthToText: widget.monthToText,
+                                              displayMode: widget.displayMode,
+                                              weekendDays: widget.weekendDays,
+                                            ),
+                                            ActivitiesGrid(
+                                              activities: c.activities,
+                                              controller:
+                                                  _gridColumnsController,
+                                              showIsoWeek: widget.showIsoWeek,
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
-                              Expanded(
-                                flex: widget.gridAreaFlex,
-                                child: LayoutBuilder(
-                                  builder: (context, gridConstraints) {
-                                    controller.gridWidth = gridConstraints.maxWidth;
-                                    return GestureDetector(
-                                      onPanStart: _handlePanStart,
-                                      onPanUpdate:
-                                          (details) => _handlePanUpdate(
-                                            details,
-                                            gridConstraints.maxWidth,
-                                            context,
-                                          ),
-                                      onPanEnd: _handlePanEnd,
-                                      onPanCancel: _handlePanCancel,
-                                      child: Stack(
-                                        children: [
-                                          CalendarGrid(
-                                            holidays: c.holidays,
-                                            showIsoWeek: widget.showIsoWeek,
-                                            monthToText: widget.monthToText,
-                                            displayMode: widget.displayMode,
-                                            weekendDays: widget.weekendDays,
-                                          ),
-                                          ActivitiesGrid(
-                                            activities: c.activities,
-                                            controller: _gridColumnsController,
-                                            showIsoWeek: widget.showIsoWeek,
-                                          ),
-                                        ],
-                                      ),
-                                    );
+                              ],
+                            ),
+                            if (widget.enableCollapsibleActivitiesList)
+                              Positioned(
+                                left: buttonLeft,
+                                right: buttonRight,
+                                top: (stackConstraints.maxHeight - 30) / 2,
+                                child: _CollapseExpandButton(
+                                  isCollapsed: _isActivitiesListCollapsed,
+                                  isRTL: isRTL,
+                                  onToggle: () {
+                                    setState(() {
+                                      _isActivitiesListCollapsed =
+                                          !_isActivitiesListCollapsed;
+                                    });
                                   },
                                 ),
                               ),
-                            ],
-                          ),
-                          if (widget.enableCollapsibleActivitiesList)
-                            Positioned(
-                              left: buttonLeft,
-                              right: buttonRight,
-                              top: (stackConstraints.maxHeight - 30) / 2,
-                              child: _CollapseExpandButton(
-                                isCollapsed: _isActivitiesListCollapsed,
-                                isRTL: isRTL,
-                                onToggle: () {
-                                  setState(() {
-                                    _isActivitiesListCollapsed =
-                                        !_isActivitiesListCollapsed;
-                                  });
-                                },
-                              ),
-                            ),
-                        ],
-                      ),
+                          ],
+                        ),
                   );
                 },
               ),
