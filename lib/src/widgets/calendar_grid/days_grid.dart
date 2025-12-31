@@ -49,6 +49,36 @@ class DaysGrid extends StatelessWidget {
           .firstOrNull
           ?.holiday;
 
+  /// Determines if a vertical line should be shown for a given day based on display mode.
+  ///
+  /// - Day mode: Show all lines
+  /// - Week mode: Show only lines at the end of each week (Sunday) to align with week separators
+  /// - Month mode: Show only lines at the end of each month to align with month separators
+  bool shouldShowLine(int index, DateTime day, List<DateTime> allDays) {
+    if (displayMode == GanttDisplayMode.day) {
+      return true; // Show all lines in day mode
+    }
+
+    final isLastDay = index == allDays.length - 1;
+
+    if (displayMode == GanttDisplayMode.week) {
+      // Show line at end of week (Sunday, weekday == 7) to align with week separator
+      // Also show at the last day of the range
+      final isEndOfWeek = day.weekday == 7; // Sunday
+      return isLastDay || isEndOfWeek;
+    }
+
+    if (displayMode == GanttDisplayMode.month) {
+      // Show line at end of month (last day before next month starts) to align with month separator
+      // Also show at the last day of the range
+      final nextDay = day.add(const Duration(days: 1));
+      final isEndOfMonth = nextDay.day == 1; // Next day is the 1st, so this is the last day of month
+      return isLastDay || isEndOfMonth;
+    }
+
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) => Expanded(
     child: Row(
@@ -60,6 +90,7 @@ class DaysGrid extends StatelessWidget {
             displayMode == GanttDisplayMode.day
                 ? DayView(day: day, theme: theme)
                 : SizedBox.shrink();
+        final showLine = shouldShowLine(i, day, controller.days);
         return Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,14 +128,15 @@ class DaysGrid extends StatelessWidget {
                   ),
                 ),
               ),
-              Container(
-                height: double.infinity,
-                width: 1,
-                color:
-                    controller.dateToHighlight(day)
-                        ? theme.defaultCellColor
-                        : Colors.grey,
-              ),
+              if (showLine)
+                Container(
+                  height: double.infinity,
+                  width: 1,
+                  color:
+                      controller.dateToHighlight(day)
+                          ? theme.defaultCellColor
+                          : Colors.grey,
+                ),
             ],
           ),
         );
