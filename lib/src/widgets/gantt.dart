@@ -113,6 +113,13 @@ class Gantt extends StatefulWidget {
   /// Defaults to `false`.
   final bool enableCollapsibleActivitiesList;
 
+  /// The list of weekday numbers that should be treated as weekend days.
+  ///
+  /// Weekday numbers: 1 = Monday, 2 = Tuesday, ..., 7 = Sunday.
+  /// Defaults to [6, 7] (Saturday and Sunday).
+  /// These days will be highlighted with [GanttTheme.weekendColor].
+  final List<int> weekendDays;
+
   /// Creates a [Gantt] chart widget.
   ///
   /// Throws an [AssertionError] if:
@@ -139,6 +146,7 @@ class Gantt extends StatefulWidget {
     this.monthToText,
     this.displayMode = GanttDisplayMode.day,
     this.enableCollapsibleActivitiesList = false,
+    this.weekendDays = const [6, 7], // Default: Saturday and Sunday
   }) : assert(
          (startDate != null || controller != null) &&
              ((activities == null) != (activitiesAsync == null)) &&
@@ -379,6 +387,7 @@ class _GanttState extends State<Gantt> {
                                             showIsoWeek: widget.showIsoWeek,
                                             monthToText: widget.monthToText,
                                             displayMode: widget.displayMode,
+                                            weekendDays: widget.weekendDays,
                                           ),
                                           ActivitiesGrid(
                                             activities: c.activities,

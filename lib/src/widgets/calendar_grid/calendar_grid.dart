@@ -42,6 +42,12 @@ class CalendarGrid extends StatelessWidget {
   /// - [GanttDisplayMode.month]: Shows months
   final GanttDisplayMode displayMode;
 
+  /// The list of weekday numbers that should be treated as weekend days.
+  ///
+  /// Weekday numbers: 1 = Monday, 2 = Tuesday, ..., 7 = Sunday.
+  /// Defaults to [6, 7] (Saturday and Sunday).
+  final List<int> weekendDays;
+
   /// Creates a [CalendarGrid] widget.
   ///
   /// [holidays] is optional and can be null when no holiday highlighting is needed.
@@ -52,6 +58,7 @@ class CalendarGrid extends StatelessWidget {
     this.showIsoWeek = false,
     this.monthToText,
     this.displayMode = GanttDisplayMode.day,
+    this.weekendDays = const [6, 7],
   });
 
   @override
@@ -72,6 +79,7 @@ class CalendarGrid extends StatelessWidget {
               controller: c,
               holidays: holidays,
               displayMode: currentDisplayMode,
+              weekendDays: weekendDays,
             ),
           ],
         );

@@ -15,25 +15,31 @@ class DaysGrid extends StatelessWidget {
 
   final GanttDisplayMode displayMode;
 
+  /// The list of weekday numbers that should be treated as weekend days.
+  ///
+  /// Weekday numbers: 1 = Monday, 2 = Tuesday, ..., 7 = Sunday.
+  final List<int> weekendDays;
+
   /// Creates a [DaysGrid] widget.
   const DaysGrid({
     super.key,
     required this.controller,
     this.holidays,
     required this.displayMode,
+    this.weekendDays = const [6, 7],
   });
 
   /// Gets the background color for a specific date based on theme and holidays.
   ///
   /// Returns:
   /// - [GanttTheme.holidayColor] for holidays
-  /// - [GanttTheme.weekendColor] for weekends
+  /// - [GanttTheme.weekendColor] for weekends (based on [weekendDays])
   /// - [Colors.transparent] for normal weekdays
   Color getDayColor(GanttTheme theme, DateTime date) {
     if ((holidays ?? []).map((e) => e.date).contains(date)) {
       return theme.holidayColor;
     }
-    if (date.isWeekend) {
+    if (weekendDays.contains(date.weekday)) {
       return theme.weekendColor;
     }
     return Colors.transparent;
