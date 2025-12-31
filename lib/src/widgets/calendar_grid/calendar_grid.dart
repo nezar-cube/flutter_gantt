@@ -57,7 +57,11 @@ class CalendarGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Consumer<GanttController>(
     builder:
-        (context, c, child) => Column(
+        (context, c, child) {
+          // Use displayMode from controller instead of widget parameter
+          // so it updates when the controller's displayMode changes
+          final currentDisplayMode = c.displayMode;
+          return Column(
           children: [
             // Month headers row
             MonthHeadersRow(controller: c, monthToText: monthToText),
@@ -67,9 +71,10 @@ class CalendarGrid extends StatelessWidget {
             DaysGrid(
               controller: c,
               holidays: holidays,
-              displayMode: displayMode,
+              displayMode: currentDisplayMode,
             ),
           ],
-        ),
+        );
+        },
   );
 }
