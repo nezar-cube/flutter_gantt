@@ -103,13 +103,23 @@ class ActivitiesList extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Consumer<GanttTheme>(
     builder:
-        (context, theme, child) => Padding(
-          padding: EdgeInsets.only(
-            top: theme.headerHeight + (showIsoWeek ? 10 : 0),
+        (context, theme, child) => Container(
+          decoration: BoxDecoration(
+            border: Border(
+              right: BorderSide(
+                color: Colors.black87,
+                width: 1,
+              ),
+            ),
           ),
-          child: ListView(
-            controller: controller,
-            children: getItems(activities, theme),
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: theme.headerHeight + (showIsoWeek ? 10 : 0),
+            ),
+            child: ListView(
+              controller: controller,
+              children: getItems(activities, theme),
+            ),
           ),
         ),
   );

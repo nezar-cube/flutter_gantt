@@ -106,6 +106,13 @@ class Gantt extends StatefulWidget {
   /// - [GanttDisplayMode.month]: Shows months
   final GanttDisplayMode displayMode;
 
+  /// Whether the activities list can be collapsed/expanded.
+  ///
+  /// If `true`, a toggle button will be shown to collapse or expand
+  /// the activities list on the left side of the Gantt chart.
+  /// Defaults to `false`.
+  final bool enableCollapsibleActivitiesList;
+
   /// Creates a [Gantt] chart widget.
   ///
   /// Throws an [AssertionError] if:
@@ -131,6 +138,7 @@ class Gantt extends StatefulWidget {
     this.showIsoWeek = false,
     this.monthToText,
     this.displayMode = GanttDisplayMode.day,
+    this.enableCollapsibleActivitiesList = false,
   }) : assert(
          (startDate != null || controller != null) &&
              ((activities == null) != (activitiesAsync == null)) &&
@@ -149,6 +157,7 @@ class _GanttState extends State<Gantt> {
   late ScrollController _listController;
   late ScrollController _gridColumnsController;
   bool _loading = false;
+  bool _isActivitiesListCollapsed = false;
 
   @override
   void initState() {
@@ -293,56 +302,166 @@ class _GanttState extends State<Gantt> {
               child: _loading ? LinearProgressIndicator() : Container(),
             ),
             Expanded(
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: widget.activitiesListFlex,
-                    child: ActivitiesList(
-                      activities: c.activities,
-                      controller: _listController,
-                      showIsoWeek: widget.showIsoWeek,
-                    ),
-                  ),
-                  Expanded(
-                    flex: widget.gridAreaFlex,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        controller.gridWidth = constraints.maxWidth;
-                        return GestureDetector(
-                          onPanStart: _handlePanStart,
-                          onPanUpdate:
-                              (details) => _handlePanUpdate(
-                                details,
-                                constraints.maxWidth,
-                                context,
-                              ),
-                          onPanEnd: _handlePanEnd,
-                          onPanCancel: _handlePanCancel,
-                          child: Stack(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final totalWidth = constraints.maxWidth;
+                  final textDirection = Directionality.of(context);
+                  final isRTL = textDirection == TextDirection.rtl;
+
+                  final activitiesListWidth =
+                      _isActivitiesListCollapsed
+                          ? 0.0
+                          : (totalWidth * widget.activitiesListFlex) /
+                              (widget.activitiesListFlex + widget.gridAreaFlex);
+
+                  // Calculate button position based on text direction
+                  double? buttonLeft;
+                  double? buttonRight;
+
+                  if (_isActivitiesListCollapsed) {
+                    // When collapsed, position at the edge
+                    if (isRTL) {
+                      buttonRight = 4.0;
+                    } else {
+                      buttonLeft = 4.0;
+                    }
+                  } else {
+                    // When expanded, position at the boundary between list and grid
+                    if (isRTL) {
+                      // In RTL, Row reverses children, so activities list is visually on the right
+                      // Button should be at the boundary, positioned from the right edge
+                      // The boundary is at activitiesListWidth from the right
+                      buttonRight = activitiesListWidth - 16;
+                    } else {
+                      // In LTR, activities list is on the left side
+                      // Button should be at the right edge of the list (boundary)
+                      buttonLeft = activitiesListWidth - 16;
+                    }
+                  }
+
+                  return LayoutBuilder(
+                    builder: (context, stackConstraints) => Stack(
+                        children: [
+                          Row(
+                            textDirection: textDirection,
                             children: [
-                              CalendarGrid(
-                                holidays: c.holidays,
-                                showIsoWeek: widget.showIsoWeek,
-                                monthToText: widget.monthToText,
-                                displayMode: widget.displayMode,
-                              ),
-                              ActivitiesGrid(
-                                activities: c.activities,
-                                controller: _gridColumnsController,
-                                showIsoWeek: widget.showIsoWeek,
+                              if (widget.enableCollapsibleActivitiesList &&
+                                  _isActivitiesListCollapsed)
+                                const SizedBox.shrink()
+                              else
+                                Expanded(
+                                  flex: widget.activitiesListFlex,
+                                  child: ActivitiesList(
+                                    activities: c.activities,
+                                    controller: _listController,
+                                    showIsoWeek: widget.showIsoWeek,
+                                  ),
+                                ),
+                              Expanded(
+                                flex: widget.gridAreaFlex,
+                                child: LayoutBuilder(
+                                  builder: (context, gridConstraints) {
+                                    controller.gridWidth = gridConstraints.maxWidth;
+                                    return GestureDetector(
+                                      onPanStart: _handlePanStart,
+                                      onPanUpdate:
+                                          (details) => _handlePanUpdate(
+                                            details,
+                                            gridConstraints.maxWidth,
+                                            context,
+                                          ),
+                                      onPanEnd: _handlePanEnd,
+                                      onPanCancel: _handlePanCancel,
+                                      child: Stack(
+                                        children: [
+                                          CalendarGrid(
+                                            holidays: c.holidays,
+                                            showIsoWeek: widget.showIsoWeek,
+                                            monthToText: widget.monthToText,
+                                            displayMode: widget.displayMode,
+                                          ),
+                                          ActivitiesGrid(
+                                            activities: c.activities,
+                                            controller: _gridColumnsController,
+                                            showIsoWeek: widget.showIsoWeek,
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
                             ],
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                          if (widget.enableCollapsibleActivitiesList)
+                            Positioned(
+                              left: buttonLeft,
+                              right: buttonRight,
+                              top: (stackConstraints.maxHeight - 30) / 2,
+                              child: _CollapseExpandButton(
+                                isCollapsed: _isActivitiesListCollapsed,
+                                isRTL: isRTL,
+                                onToggle: () {
+                                  setState(() {
+                                    _isActivitiesListCollapsed =
+                                        !_isActivitiesListCollapsed;
+                                  });
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                  );
+                },
               ),
             ),
           ],
         ),
       );
     },
+  );
+}
+
+/// A button widget for collapsing/expanding the activities list in the Gantt chart.
+class _CollapseExpandButton extends StatelessWidget {
+  const _CollapseExpandButton({
+    required this.isCollapsed,
+    required this.isRTL,
+    required this.onToggle,
+  });
+
+  final bool isCollapsed;
+  final bool isRTL;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 30,
+    height: 30,
+    decoration: BoxDecoration(
+      color: Theme.of(context).primaryColor.withValues(alpha: 0.7),
+      borderRadius: BorderRadius.circular(4),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: IconButton(
+      icon: Icon(
+        isCollapsed
+            ? (isRTL ? Icons.chevron_left : Icons.chevron_right)
+            : (isRTL ? Icons.chevron_right : Icons.chevron_left),
+        size: 18,
+        color: Colors.white,
+      ),
+      onPressed: onToggle,
+      tooltip:
+          isCollapsed ? 'Expand activities list' : 'Collapse activities list',
+      padding: const EdgeInsets.all(3),
+      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+    ),
   );
 }
