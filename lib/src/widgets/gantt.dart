@@ -120,6 +120,12 @@ class Gantt extends StatefulWidget {
   /// These days will be highlighted with [GanttTheme.weekendColor].
   final List<int> weekendDays;
 
+  /// Whether to force the text direction to LTR.
+  ///
+  /// If `true`, the text direction will be forced to LTR regardless of the system locale.
+  /// Defaults to `false`.
+  final bool forceLTR;
+
   /// Creates a [Gantt] chart widget.
   ///
   /// Throws an [AssertionError] if:
@@ -147,6 +153,7 @@ class Gantt extends StatefulWidget {
     this.displayMode = GanttDisplayMode.day,
     this.enableCollapsibleActivitiesList = false,
     this.weekendDays = const [6, 7], // Default: Saturday and Sunday
+    this.forceLTR = false,
   }) : assert(
          (startDate != null || controller != null) &&
              ((activities == null) != (activitiesAsync == null)) &&
@@ -223,7 +230,7 @@ class _GanttState extends State<Gantt> {
 
     // Increase threshold for month mode to slow down scrolling
     final thresholdFactor = switch (widget.displayMode) {
-      GanttDisplayMode.month => 3.0,
+      GanttDisplayMode.month => 10.0,
       GanttDisplayMode.week => 1.0,
       GanttDisplayMode.day => 1.0,
     };
@@ -245,7 +252,7 @@ class _GanttState extends State<Gantt> {
       // In RTL, swap next/prev to match user expectations
       // LTR: negative dx (left) → next, positive dx (right) → prev
       // RTL: negative dx (left) → prev, positive dx (right) → next
-      if (isRTL) {
+      if (isRTL && !widget.forceLTR) {
         // In RTL, invert the logic
         if (dx.isNegative) {
           controller.prev(fetchData: false); // Drag left → earlier dates

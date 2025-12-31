@@ -39,66 +39,82 @@ class ActivitiesList extends StatelessWidget {
   /// [theme] - The current [GanttTheme] for styling
   /// [nested] - The current nesting level (used for indentation)
   List<Widget> getItems(
+    BuildContext context,
     List<GanttActivity> activities,
     GanttTheme theme, {
     int nested = 0,
-  }) => List.generate(
-    activities.length,
-    (index) => Padding(
-      padding: EdgeInsets.only(
-        top: theme.rowPadding + (nested == 0 ? theme.rowsGroupPadding : 0),
-        left: 8.0 * (nested + 1),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: theme.cellHeight,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (activities[index].iconTitle != null)
-                  Padding(
-                    padding: EdgeInsets.only(right: 4),
-                    child: activities[index].iconTitle!,
-                  ),
-                Expanded(
-                  child:
-                      activities[index].listTitleWidget ??
-                      activities[index].titleWidget ??
-                      Tooltip(
-                        message: activities[index].tooltip ?? '',
-                        child: Text(
-                          activities[index].listTitle ??
-                              activities[index].title!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+  }) {
+    // Detect if text contains Arabic characters
+    final locale = Localizations.localeOf(context);
+    final isArabic = locale.languageCode == 'ar';
+    
+    return List.generate(
+      activities.length,
+      (index) => Padding(
+        padding: EdgeInsets.only(
+          top: theme.rowPadding + (nested == 0 ? theme.rowsGroupPadding : 0),
+          left: 8.0 * (nested + 1),
+          right: isArabic ? 12.0 : 8.0,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: theme.cellHeight,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  if (activities[index].iconTitle != null)
+                    Padding(
+                      padding: EdgeInsets.only(left: 4),
+                      child: activities[index].iconTitle!,
+                    ),
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: isArabic ? 8.0 : 0,
+                        left: isArabic ? 0 : 4.0,
                       ),
-                ),
-                if (activities[index].actions?.isNotEmpty == true)
-                  Row(
-                    children:
-                        activities[index].actions!.map((e) {
-                          final child = IconButton(
-                            padding: EdgeInsets.zero,
-                            onPressed: e.onTap,
-                            icon: Icon(e.icon, size: theme.cellHeight * 0.8),
-                          );
-                          return e.tooltip != null
-                              ? Tooltip(message: e.tooltip, child: child)
-                              : child;
-                        }).toList(),
+                      child:
+                          activities[index].listTitleWidget ??
+                          activities[index].titleWidget ??
+                          Tooltip(
+                            message: activities[index].tooltip ?? '',
+                            child: Text(
+                              activities[index].listTitle ??
+                                  activities[index].title!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                              textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+                            ),
+                          ),
+                    ),
                   ),
-              ],
+                  if (activities[index].actions?.isNotEmpty == true)
+                    Row(
+                      children:
+                          activities[index].actions!.map((e) {
+                            final child = IconButton(
+                              padding: EdgeInsets.zero,
+                              onPressed: e.onTap,
+                              icon: Icon(e.icon, size: theme.cellHeight * 0.8),
+                            );
+                            return e.tooltip != null
+                                ? Tooltip(message: e.tooltip, child: child)
+                                : child;
+                          }).toList(),
+                    ),
+                ],
+              ),
             ),
-          ),
-          if (activities[index].children?.isNotEmpty == true)
-            ...getItems(activities[index].children!, theme, nested: nested + 1),
-        ],
+            if (activities[index].children?.isNotEmpty == true)
+              ...getItems(context, activities[index].children!, theme, nested: nested + 1),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   @override
   Widget build(BuildContext context) => Consumer<GanttTheme>(
@@ -112,14 +128,21 @@ class ActivitiesList extends StatelessWidget {
               ),
             ),
           ),
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: theme.headerHeight + (showIsoWeek ? 10 : 0),
-            ),
-            child: ListView(
-              controller: controller,
-              children: getItems(activities, theme),
-            ),
+          child: Builder(
+            builder: (context) {
+              final locale = Localizations.localeOf(context);
+              final isArabic = locale.languageCode == 'ar';
+              return Padding(
+                padding: EdgeInsets.only(
+                  top: theme.headerHeight + (showIsoWeek ? 10 : 0),
+                  right: isArabic ? 4.0 : 0,
+                ),
+                child: ListView(
+                  controller: controller,
+                  children: getItems(context, activities, theme),
+                ),
+              );
+            },
           ),
         ),
   );
