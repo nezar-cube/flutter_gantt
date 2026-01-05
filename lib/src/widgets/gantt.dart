@@ -172,7 +172,17 @@ class _GanttState extends State<Gantt> {
   late ScrollController _listController;
   late ScrollController _gridColumnsController;
   bool _loading = false;
-  bool _isActivitiesListCollapsed = false;
+  
+  // Static variable to persist collapsed state across widget rebuilds
+  static bool _isActivitiesListCollapsedState = false;
+  
+  bool get _isActivitiesListCollapsed => _isActivitiesListCollapsedState;
+  
+  void _setIsActivitiesListCollapsed(bool value) {
+    setState(() {
+      _isActivitiesListCollapsedState = value;
+    });
+  }
 
   @override
   void initState() {
@@ -444,10 +454,8 @@ class _GanttState extends State<Gantt> {
                                   isCollapsed: _isActivitiesListCollapsed,
                                   isRTL: isRTL,
                                   onToggle: () {
-                                    setState(() {
-                                      _isActivitiesListCollapsed =
-                                          !_isActivitiesListCollapsed;
-                                    });
+                                    _setIsActivitiesListCollapsed(
+                                        !_isActivitiesListCollapsed);
                                   },
                                 ),
                               ),
