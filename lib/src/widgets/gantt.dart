@@ -230,7 +230,7 @@ class _GanttState extends State<Gantt> {
 
     // Increase threshold for month mode to slow down scrolling
     final thresholdFactor = switch (widget.displayMode) {
-      GanttDisplayMode.month => 10.0,
+      GanttDisplayMode.month => 20.0,
       GanttDisplayMode.week => 1.0,
       GanttDisplayMode.day => 1.0,
     };
@@ -370,9 +370,21 @@ class _GanttState extends State<Gantt> {
                             Row(
                               textDirection: textDirection,
                               children: [
-                                if (widget.enableCollapsibleActivitiesList &&
-                                    _isActivitiesListCollapsed)
-                                  const SizedBox.shrink()
+                                if (widget.enableCollapsibleActivitiesList)
+                                  AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                    width: _isActivitiesListCollapsed
+                                        ? 0.0
+                                        : activitiesListWidth,
+                                    child: _isActivitiesListCollapsed
+                                        ? const SizedBox.shrink()
+                                        : ActivitiesList(
+                                            activities: c.activities,
+                                            controller: _listController,
+                                            showIsoWeek: widget.showIsoWeek,
+                                          ),
+                                  )
                                 else
                                   Expanded(
                                     flex: widget.activitiesListFlex,
@@ -422,7 +434,9 @@ class _GanttState extends State<Gantt> {
                               ],
                             ),
                             if (widget.enableCollapsibleActivitiesList)
-                              Positioned(
+                              AnimatedPositioned(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
                                 left: buttonLeft,
                                 right: buttonRight,
                                 top: (stackConstraints.maxHeight - 30) / 2,
@@ -478,12 +492,23 @@ class _CollapseExpandButton extends StatelessWidget {
       ],
     ),
     child: IconButton(
-      icon: Icon(
-        isCollapsed
-            ? (isRTL ? Icons.chevron_left : Icons.chevron_right)
-            : (isRTL ? Icons.chevron_right : Icons.chevron_left),
-        size: 18,
-        color: Colors.white,
+      icon: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) => RotationTransition(
+            turns: animation,
+            child: FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+          ),
+        child: Icon(
+          isCollapsed
+              ? (isRTL ? Icons.chevron_left : Icons.chevron_right)
+              : (isRTL ? Icons.chevron_right : Icons.chevron_left),
+          key: ValueKey(isCollapsed),
+          size: 18,
+          color: Colors.white,
+        ),
       ),
       onPressed: onToggle,
       tooltip:
